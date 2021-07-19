@@ -1,0 +1,7 @@
+useDynLib(SMME, .registration = TRUE)
+export(RH)
+export(softmaximin)
+export(predict.SMME)
+importFrom(Rcpp, evalCpp)
+S3method(predict, SMME)
+S3method(print, SMME)
