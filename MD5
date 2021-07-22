@@ -1,4 +1,4 @@
-81ebe9a360fa9217cd3ade68faa4c95c *DESCRIPTION
+1a51e2ed376e04f4223ebc9820f4e174 *DESCRIPTION
 102f155c83a397351b997abde98557e1 *NAMESPACE
 ffe184452976db873c6cbbae65f30a12 *R/RcppExports.R
 ab54fb3034406ecee796108a759a6d8e *R/SMME.R
@@ -10,8 +10,8 @@ b71914f92069fab75c5be5ef044f3315 *R/SMME_print.R
 237eb135e9a840efb6a3ecf5dfcdf9aa *man/SMME.Rd
 184007b70d1b8fb1538588b127e64cdf *man/predict.SMME.Rd
 e531a58fce8b80b69f834586455f8568 *man/print.SMME.Rd
-be88a6f6dece9c4f5c30cc0e2c419e61 *src/Makevars
-5f4c2dbef9578f4c03e79eb8fafd28a3 *src/Makevars.win
+571c68f6e24ddda3c8bc4a5d359a6098 *src/Makevars
+ee0401738e0532e2faa915c536454a0a *src/Makevars.win
 8564c46be1f093ac25ac18c01dc8f806 *src/RcppExports.cpp
 b654f58399a680ee150e9d11b813e372 *src/auxfunc.h
 28621c23e94f21d516694f8c8c819c28 *src/rcppfunc.cpp
