@@ -6,39 +6,40 @@
 \alias{SMME.predict}
 \title{Make Prediction From a SMME Object}
 \usage{
-\method{predict}{SMME}(object, x = NULL, X = NULL, ...)
+\method{predict}{SMME}(object, x, ...)
 }
 \arguments{
 \item{object}{An object of class SMME, produced with \code{softmaximin} with
 \eqn{m_\zeta} fitted models for each value of \code{zeta}.}
 
-\item{x}{a matrix of size \eqn{n' \times p} with \eqn{n'} is the number of new data points.}
+\item{x}{An object that should be like the input to the \code{softmaximin} call
+that produced \code{object}. For general  models a matrix with column
+dimension equal to that of  the original input.For array models with custom
+design a list like the one supplied to \code{softmaximin} to produce \code{object}
+and for a wavelet design the name of the wavelet used to produce \code{object}.}
 
-\item{X}{a list containing the data matrices each of size \eqn{n'_{i} \times p_i},
-where \eqn{n'_{i}} is the number of new data points in  the \eqn{i}th dimension.}
-
-\item{...}{ignored}
+\item{...}{ignored.}
 }
 \value{
-A list of length \code{length(zeta)}.
-If new covariate data is supplied as an \eqn{n' \times p} matrix \code{x}
-each item in the list is an \eqn{n'\times m_\zeta} matrix with the linear
-predictors computed for each model. If new covariate data is supplied as a
-list of matrices each of size \eqn{n'_{i} \times p_i},  each item is an array
-of size \eqn{n'_1 \times \cdots \times n'_d \times m_\zeta},
-\eqn{d\in \{1,2,3\}}, with the linear predictors computed for each model.
+A list of length \code{length(zeta)}. If \code{x} is a \eqn{n' \times p}
+matrix each list item is a \eqn{n'\times m_\zeta} matrix containing the linear
+predictors computed for each \code{lambda}. If \code{x} is a string or a list of
+tensor component matrices and \code{fit$dim = d}, each list item is a \eqn{d + 1}
+array  containing predictions computed for each \code{lambda}.
 }
 \description{
 Given new covariate data this function computes the linear predictors
 based on the estimated model coefficients in an object produced by the function
-\code{softmaximin}. Note that the data can be supplied in two different
-formats: i) as a \eqn{n' \times p} matrix (\eqn{p} is the number of model
-coefficients and \eqn{n'} is the number of new data points) or ii) as a list
-of two or three Kronecker component matrices each of size \eqn{n_i' \times p_i, i = 1, 2, 3}
-(\eqn{n_i'} is the number of new marginal data points in the \eqn{i}th dimension).
+\code{softmaximin}. Note that the data can be supplied in three different
+formats: i) for general models as a \eqn{n' \times p} matrix (\eqn{p} is the
+number of model coefficients and \eqn{n'} is the number of new data points),
+ii) for array models with custom design as a list of one, two or three Kronecker component
+matrices each of size \eqn{n_i' \times p_i, i = 1, 2, 3}
+(\eqn{n_i'} is the number of new marginal data points in the \eqn{i}th dimension),
+iii) for wavelet based models a string indicating the wavelet used to produce
+the model object.
 }
 \examples{
-
 ##size of example
 n1 <- 65; n2 <- 26; n3 <- 13; p1 <- 13; p2 <- 5; p3 <- 4
 
@@ -61,15 +62,11 @@ Y[,,, 1] <- Y1; Y[,,, 2] <- Y2;
 
 fit <- softmaximin(X, Y, zeta = c(1, 10), penalty = "lasso", alg = "npg")
 
-##new data in matrix form
-x <- matrix(rnorm(2 * p1 * p2 * p3), nrow = 2)
-yhat <- predict(fit, x = x)
-
 ##new data in tensor component form
 X1 <- matrix(rnorm(2 * p1), nrow = 2)
 X2 <- matrix(rnorm(3 * p2), nrow = 3)
 X3 <- matrix(rnorm(4 * p3), nrow = 4)
-Yhat <- predict(fit, X = list(X1, X2, X3))
+Yhat <- predict(fit, x = list(X1, X2, X3))
 
 }
 \author{

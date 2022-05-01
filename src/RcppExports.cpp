@@ -6,9 +6,14 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // pga
-Rcpp::List pga(Rcpp::List phi, Rcpp::List resp, std::string penalty, arma::vec zeta, double c, arma::vec lambda, int nlambda, int makelamb, double lambdaminratio, arma::mat penaltyfactor, double reltol, int maxiter, int steps, int btmax, int mem, double tau, double nu, int alg, int array, int ll, double Lmin, int nthreads);
-RcppExport SEXP _SMME_pga(SEXP phiSEXP, SEXP respSEXP, SEXP penaltySEXP, SEXP zetaSEXP, SEXP cSEXP, SEXP lambdaSEXP, SEXP nlambdaSEXP, SEXP makelambSEXP, SEXP lambdaminratioSEXP, SEXP penaltyfactorSEXP, SEXP reltolSEXP, SEXP maxiterSEXP, SEXP stepsSEXP, SEXP btmaxSEXP, SEXP memSEXP, SEXP tauSEXP, SEXP nuSEXP, SEXP algSEXP, SEXP arraySEXP, SEXP llSEXP, SEXP LminSEXP, SEXP nthreadsSEXP) {
+Rcpp::List pga(Rcpp::List phi, Rcpp::List resp, std::string penalty, arma::vec zeta, double c, arma::vec lambda, int nlambda, int makelamb, double lambdaminratio, arma::mat penaltyfactor, double reltol, int maxiter, int steps, int btmax, int mem, double tau, double nu, int alg, int array, int ll, double Lmin, int nthreads, int wave, int J, int dim, std::string wf);
+RcppExport SEXP _SMME_pga(SEXP phiSEXP, SEXP respSEXP, SEXP penaltySEXP, SEXP zetaSEXP, SEXP cSEXP, SEXP lambdaSEXP, SEXP nlambdaSEXP, SEXP makelambSEXP, SEXP lambdaminratioSEXP, SEXP penaltyfactorSEXP, SEXP reltolSEXP, SEXP maxiterSEXP, SEXP stepsSEXP, SEXP btmaxSEXP, SEXP memSEXP, SEXP tauSEXP, SEXP nuSEXP, SEXP algSEXP, SEXP arraySEXP, SEXP llSEXP, SEXP LminSEXP, SEXP nthreadsSEXP, SEXP waveSEXP, SEXP JSEXP, SEXP dimSEXP, SEXP wfSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -34,13 +39,53 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type ll(llSEXP);
     Rcpp::traits::input_parameter< double >::type Lmin(LminSEXP);
     Rcpp::traits::input_parameter< int >::type nthreads(nthreadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(pga(phi, resp, penalty, zeta, c, lambda, nlambda, makelamb, lambdaminratio, penaltyfactor, reltol, maxiter, steps, btmax, mem, tau, nu, alg, array, ll, Lmin, nthreads));
+    Rcpp::traits::input_parameter< int >::type wave(waveSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< std::string >::type wf(wfSEXP);
+    rcpp_result_gen = Rcpp::wrap(pga(phi, resp, penalty, zeta, c, lambda, nlambda, makelamb, lambdaminratio, penaltyfactor, reltol, maxiter, steps, btmax, mem, tau, nu, alg, array, ll, Lmin, nthreads, wave, J, dim, wf));
+    return rcpp_result_gen;
+END_RCPP
+}
+// WT
+arma::mat WT(arma::mat x, int dim, std::string wf, int J, int p1, int p2, int p3);
+RcppExport SEXP _SMME_WT(SEXP xSEXP, SEXP dimSEXP, SEXP wfSEXP, SEXP JSEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< std::string >::type wf(wfSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< int >::type p2(p2SEXP);
+    Rcpp::traits::input_parameter< int >::type p3(p3SEXP);
+    rcpp_result_gen = Rcpp::wrap(WT(x, dim, wf, J, p1, p2, p3));
+    return rcpp_result_gen;
+END_RCPP
+}
+// IWT
+arma::mat IWT(arma::mat x, int dim, std::string wf, int J, int p1, int p2, int p3);
+RcppExport SEXP _SMME_IWT(SEXP xSEXP, SEXP dimSEXP, SEXP wfSEXP, SEXP JSEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type dim(dimSEXP);
+    Rcpp::traits::input_parameter< std::string >::type wf(wfSEXP);
+    Rcpp::traits::input_parameter< int >::type J(JSEXP);
+    Rcpp::traits::input_parameter< int >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< int >::type p2(p2SEXP);
+    Rcpp::traits::input_parameter< int >::type p3(p3SEXP);
+    rcpp_result_gen = Rcpp::wrap(IWT(x, dim, wf, J, p1, p2, p3));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_SMME_pga", (DL_FUNC) &_SMME_pga, 22},
+    {"_SMME_pga", (DL_FUNC) &_SMME_pga, 26},
+    {"_SMME_WT", (DL_FUNC) &_SMME_WT, 7},
+    {"_SMME_IWT", (DL_FUNC) &_SMME_IWT, 7},
     {NULL, NULL, 0}
 };
 

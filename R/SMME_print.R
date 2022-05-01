@@ -1,24 +1,3 @@
-#
-#     Description of this R script:
-#     R interface for SMME routines.
-#
-#     Intended for use with R.
-#     Copyright (C) 2017 Adam Lund
-#
-#     This program is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>
-#
-
 #' @title Print Function for objects of Class SMME
 #'
 #' @description This function will print some information about the SMME object.
@@ -58,14 +37,14 @@
 
 print.SMME <- function(x, ...) {
 
-if(length(x$df) > 1){
-out <- vector(mode = "list", length = length(x$df))
+if(length(x$zeta) > 1){
+out <- vector(mode = "list", length = length(x$zeta))
 names(out) <- x$zeta
-for(i in 1:length(x$df)){
+for(i in 1:length(x$zeta)){
 out[[i]] <- data.frame(Df = x$df[[i]], lambda = x$lambda[[i]])
 }
 }else{
-out <- list(data.frame(Df = x$df, lambda = x$lambda))
+out <- data.frame(Df = x$df, lambda = x$lambda)
 }
 
 print(out)

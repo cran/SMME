@@ -1,52 +1,33 @@
-#
-#     Description of this R script:
-#     R interface for SMME routines.
-#
-#     Intended for use with R.
-#     Copyright (C) 2021 Adam Lund
-#
-#     This program is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>
-#
-
 #' @aliases SMME_predict SMME.predict
 #' @title Make Prediction From a SMME Object
 #'
 #' @description  Given new covariate data this function computes the linear predictors
 #' based on the estimated model coefficients in an object produced by the function
-#' \code{softmaximin}. Note that the data can be supplied in two different
-#' formats: i) as a \eqn{n' \times p} matrix (\eqn{p} is the number of model
-#' coefficients and \eqn{n'} is the number of new data points) or ii) as a list
-#' of two or three Kronecker component matrices each of size \eqn{n_i' \times p_i, i = 1, 2, 3}
-#' (\eqn{n_i'} is the number of new marginal data points in the \eqn{i}th dimension).
+#' \code{softmaximin}. Note that the data can be supplied in three different
+#' formats: i) for general models as a \eqn{n' \times p} matrix (\eqn{p} is the
+#' number of model coefficients and \eqn{n'} is the number of new data points),
+#' ii) for array models with custom design as a list of one, two or three Kronecker component
+#' matrices each of size \eqn{n_i' \times p_i, i = 1, 2, 3}
+#' (\eqn{n_i'} is the number of new marginal data points in the \eqn{i}th dimension),
+#' iii) for wavelet based models a string indicating the wavelet used to produce
+#' the model object.
 #'
 #'
 #' @param object An object of class SMME, produced with \code{softmaximin} with
 #' \eqn{m_\zeta} fitted models for each value of \code{zeta}.
-#' @param x a matrix of size \eqn{n' \times p} with \eqn{n'} is the number of new data points.
-#' @param X  a list containing the data matrices each of size \eqn{n'_{i} \times p_i},
-#' where \eqn{n'_{i}} is the number of new data points in  the \eqn{i}th dimension.
-#' @param ... ignored
+#' @param x An object that should be like the input to the \code{softmaximin} call
+#' that produced \code{object}. For general  models a matrix with column
+#' dimension equal to that of  the original input.For array models with custom
+#' design a list like the one supplied to \code{softmaximin} to produce \code{object}
+#' and for a wavelet design the name of the wavelet used to produce \code{object}.
+#' @param ... ignored.
+#' @return A list of length \code{length(zeta)}. If \code{x} is a \eqn{n' \times p}
+#' matrix each list item is a \eqn{n'\times m_\zeta} matrix containing the linear
+#' predictors computed for each \code{lambda}. If \code{x} is a string or a list of
+#' tensor component matrices and \code{fit$dim = d}, each list item is a \eqn{d + 1}
+#' array  containing predictions computed for each \code{lambda}.
 #'
-#' @return  A list of length \code{length(zeta)}.
-#' If new covariate data is supplied as an \eqn{n' \times p} matrix \code{x}
-#' each item in the list is an \eqn{n'\times m_\zeta} matrix with the linear
-#' predictors computed for each model. If new covariate data is supplied as a
-#' list of matrices each of size \eqn{n'_{i} \times p_i},  each item is an array
-#' of size \eqn{n'_1 \times \cdots \times n'_d \times m_\zeta},
-#' \eqn{d\in \{1,2,3\}}, with the linear predictors computed for each model.
 #' @examples
-#'
 #' ##size of example
 #' n1 <- 65; n2 <- 26; n3 <- 13; p1 <- 13; p2 <- 5; p3 <- 4
 #'
@@ -69,118 +50,58 @@
 #'
 #' fit <- softmaximin(X, Y, zeta = c(1, 10), penalty = "lasso", alg = "npg")
 #'
-#' ##new data in matrix form
-#' x <- matrix(rnorm(2 * p1 * p2 * p3), nrow = 2)
-#' yhat <- predict(fit, x = x)
-#'
 #' ##new data in tensor component form
 #' X1 <- matrix(rnorm(2 * p1), nrow = 2)
 #' X2 <- matrix(rnorm(3 * p2), nrow = 3)
 #' X3 <- matrix(rnorm(4 * p3), nrow = 4)
-#' Yhat <- predict(fit, X = list(X1, X2, X3))
+#' Yhat <- predict(fit, x = list(X1, X2, X3))
 #'
 #' @author Adam Lund
 #' @method predict SMME
 #' @export
-predict.SMME <- function(object, x = NULL, X = NULL, ...){
-
-nzeta <- length(object$zeta)
-p <- object$dimcoef
-out <- vector("list", nzeta)
+predict.SMME <- function(object, x, ...){
+out <- vector("list", length(object$zeta))
 names(out) <- object$zeta
-
-if(is.null(x) & is.null(X)){
-
-stop(paste("no new data provided"))
-
-}else if(is.null(x) == FALSE & is.null(X)){
-
-x <- as.matrix(x)
-coldim <- dim(x)[2]
-nofcoef <- prod(p)
-
-if(coldim != nofcoef){
-
-stop(
-paste("column dimension of the new data x (", coldim ,") is not equal to the number of coefficients p (", nofcoef ,")", sep = "")
-)
-
+if(is.character(x) || is.list(x)){ #array model
+if(is.list(x)){##custom design (non wavelets)
+if(length(x) != object$dim){stop("length of x must be equal to dimension of model!")}
+if(object$dim == 1){
+x[[2]] <- matrix(1, 1, 1)
+x[[3]] <- matrix(1, 1, 1)
+}else if(object$dim == 2){x[[3]] <- matrix(1, 1, 1)}
+  px <- nx <- rep(NA, length(x))
+  for( i in 1:length(x)){
+    nx[i] = dim(x[[i]])[1]
+    px[i] = dim(x[[i]])[2]
+  }
+if(sum(px[px > 1] != object$dimcoef[object$dimcoef > 1]) > 0){
+stop(paste("column dimensions of new data (", paste(px, collapse = ",") ,") is not equal those of fit (", paste(object$dimcoef, collapse = ",") ,")", sep = ""))
 }
-
+}else{#wavelet
+nx<-px <- c(object$dimcoef, rep(1, 3 - length(object$dimcoef)))
+}
 for(z in 1:length(object$zeta)){
 nlambda <- length(object$lambda[[z]])
-res <- matrix(NA ,dim(x)[1], nlambda)
+res <- array(NA, c(nx, nlambda))
 for(i in 1:nlambda){
-
-beta <- object$coef[[z]][ , i]
-res[, i] <- x %*% beta
-
+if(!(is.character(x))){
+res[,,, i] <- RH(x[[3]], RH(x[[2]], RH(x[[1]], array(object$coef[[z]][, i], dim = px))))
+}else{
+res[,,, i] <- iwt(array(object$coef[[z]][, i], dim = px), wf = x)
 }
-
-out[[z]] <- res
-
 }
-
-}else if(is.null(x)  & is.null(X) == FALSE){
-
-if(!is.list(X)){stop(paste("X must be a list of length 1, 2 or 3!"))}
-
-dimglam <- length(X)
-
-if (dimglam > 3){
-
-stop(paste("the dimension of the model must be 1, 2 or 3!"))
-
-}else if(dimglam == 1){
-
-X[[2]] <- matrix(1, 1, 1)
-X[[3]] <- matrix(1, 1, 1)
-
-}else if(dimglam == 2){X[[3]] <- matrix(1, 1, 1)}
-
-X1 <- X[[1]]
-X2 <- X[[2]]
-X3 <- X[[3]]
-
-dimX <- rbind(dim(X1), dim(X2), dim(X3))
-
-n1 <- dimX[1, 1]
-n2 <- dimX[2, 1]
-n3 <- dimX[3, 1]
-p1 <- dimX[1, 2]
-p2 <- dimX[2, 2]
-p3 <- dimX[3, 2]
-n <- prod(dimX[,1])
-p <- prod(dimX[,2])
-
-coldim <- dim(X1)[2] * dim(X2)[2] * dim(X3)[2]
-
-if(coldim != p){
-
-stop(
-paste("column dimension of the kronecker product of the new data X (", coldim ,") is not equal to the number of coefficients p (", p ,")", sep = "")
-)
-
+out[[z]] <- drop(res)}
+}else if(is.matrix(x)){#non array
+px <- dim(x)[2]
+if(px != object$dimcoef){
+stop(paste("column dimension of new data (", px ,") is not equal that of fit (", object$dimcoef ,")", sep = ""))
 }
-
 for(z in 1:length(object$zeta)){
-
-nlambda <- length(object$lambda[[z]])
-res <- array(NA , c(n1, n2, n3, nlambda))
-
-for(i in 1:nlambda){
-
-beta <- array(object$coef[[z]][ , i], dim = c(p1, p2, p3))
-res[,,, i] <- RH(X3, RH(X2, RH(X1, beta)))
-
+  nlambda <- length(object$lambda[[z]])
+  res <- matrix(NA , dim(x)[1], nlambda)
+  for(i in 1:nlambda){res[, i] <- x %*% object$coef[[z]][ , i]}
+  out[[z]] <- res}
 }
-
-out[[z]] <- drop(res)
-
-}
-
-}else{stop(paste("dimension of new data inconsistent with existing data"))}
-
+#}else{stop(paste("dimension of new data inconsistent with existing data"))}
 return(out)
-
 }

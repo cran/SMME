@@ -1,24 +1,3 @@
-#
-#     Description of this R script:
-#     Rotated H-transform of an array A by a matrix M.
-#
-#     Intended for use with R.
-#     Copyright (C) 2015 Adam Lund
-#
-#     This program is free software: you can redistribute it and/or modify
-#     it under the terms of the GNU General Public License as published by
-#     the Free Software Foundation, either version 3 of the License, or
-#     (at your option) any later version.
-#
-#     This program is distributed in the hope that it will be useful,
-#     but WITHOUT ANY WARRANTY; without even the implied warranty of
-#     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#     GNU General Public License for more details.
-#
-#     You should have received a copy of the GNU General Public License
-#     along with this program.  If not, see <http://www.gnu.org/licenses/>
-#
-
 # H-transform of an array A by a matrix X
 H<-function(M, A){
   d <- dim(A)
@@ -36,7 +15,7 @@ Rotate <- function(A){
 
 #' @name RH
 #'
-#' @aliases glamlasso_RH Rotate H
+#' @aliases SMME_RH Rotate H
 #'
 #' @title The Rotated H-transform of a 3d Array by a Matrix
 #'
@@ -57,7 +36,6 @@ Rotate <- function(A){
 #' Currie, I. D., M. Durban, and P. H. C. Eilers (2006). Generalized linear
 #' array models with applications to multidimensional smoothing.
 #' \emph{Journal of the Royal Statistical Society. Series B}. 68, 259-280. url = {http://dx.doi.org/10.1111/j.1467-9868.2006.00543.x}.
-#'
 #'
 #' @author Adam Lund
 #'

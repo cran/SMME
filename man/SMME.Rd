@@ -14,6 +14,7 @@ softmaximin(x,
             nlambda = 30,
             lambda.min.ratio = 1e-04,
             lambda = NULL,
+            scale_y = 1,
             penalty.factor = NULL,
             reltol = 1e-05,
             maxiter = 1000,
@@ -24,14 +25,15 @@ softmaximin(x,
             M = 4,
             nu = 1,
             Lmin = 0,
-            log = TRUE,
+            lse = TRUE,
             nthreads = 4)
 }
 \arguments{
-\item{x}{list containing the G group specific design matrices of sizes
-\eqn{n_i \times p_i}. Alternatively for a model with identical tensor design
-across G groups, \code{x} is a list containing the \eqn{d}
-(\eqn{d \in \{ 1, 2, 3\}}) tensor components.}
+\item{x}{Either a list containing the G group specific design matrices of sizes
+\eqn{n_i \times p_i} (general model),  a list containing the \eqn{d}
+(\eqn{d \in \{ 1, 2, 3\}}) tensor components (tensor array model) or a string
+indicating which wavelet design to use (wavelet array model), see \link{wt}
+for options.}
 
 \item{y}{list containing the G group specific response vectors of sizes
 \eqn{n_i \times 1}. Alternatively for a model with identical tensor design
@@ -57,6 +59,8 @@ smallest value for which all coefficients are zero. Used when lambda is not
 specified.}
 
 \item{lambda}{sequence of strictly positive floats used  as penalty parameters.}
+
+\item{scale_y}{strictly positive number that is the response \code{y} is multiplied with.}
 
 \item{penalty.factor}{array of size \eqn{p_1 \times \cdots \times p_d} of
 positive floats. Is multiplied with each element in \code{lambda} to allow
@@ -92,8 +96,8 @@ Default is \code{nu = 1}.}
 stepsize. For the default  \code{Lmin = 0} the maximum step size is the same
 as for the FISTA algorithm.}
 
-\item{log}{logical variable indicating whether to use log-loss.  TRUE is
-default and yields the loss below.}
+\item{lse}{logical variable indicating whether to use the log-sum-exp-loss.  TRUE is
+default and yields the loss below and  FALSE yields the exponential of this.}
 
 \item{nthreads}{integer giving the number of threads to use when  openMP
 is available. Default is 4.}
@@ -101,37 +105,43 @@ is available. Default is 4.}
 \value{
 An object with S3 Class "SMME".
 \item{spec}{A string indicating the array dimension (1, 2 or 3) and the penalty.}
-\item{coef}{A \eqn{p_1\cdots p_d \times} \code{nlambda} matrix containing the
-estimates of the model coefficients (\code{beta}) for each \code{lambda}-value
-for which the procedure converged. When \code{length(zeta) > 1}
-a \code{length(zeta)}-list of such matrices.}
-\item{lambda}{A vector containing the sequence of penalty values used
-in the estimation procedure for which the procedure converged.
-When \code{length(zeta) > 1} a \code{length(zeta)}-list of such vectors.}
-\item{Obj}{A matrix containing the objective values for each
-iteration and each model for which the procedure converged.
-When \code{length(zeta) > 1} a \code{length(zeta)}-list of such matrices.}
-\item{df}{A vector indicating the nonzero model coefficients for each
-value of \code{lambda} for which the procedure converged. When
-\code{length(zeta) > 1} a \code{length(zeta)}-list of such vectors.}
+\item{coef}{A  \code{length(zeta)}-list of \eqn{p \times} \code{nlambda}
+matrices containing the estimates of the model coefficients (\eqn{\beta}) for
+each \code{lambda}-value for which the procedure converged.}
+\item{lambda}{A \code{length(zeta)}-list vectors containing the sequence of
+penalty values used in the estimation procedure for which the procedure converged.}
+\item{df}{A  \code{length(zeta)}-list of vectors indicating the nonzero model
+coefficients for each value of \code{lambda} for which the procedure converged.}
 \item{dimcoef}{An integer giving the number \eqn{p} of model parameters.
-For array data a vector giving the dimension of the model
-coefficient array \eqn{\beta}.}
+For array data a vector giving the dimension of the model coefficient array \eqn{\beta}.}
 \item{dimobs}{An integer giving the number of observations. For array data a
 vector giving the dimension of the observation (response) array \code{Y}.}
-\item{iter}{A vector containing the  number of  iterations for each
-\code{lambda} value for which the procedure converged. When
-\code{length(zeta) > 1} a \code{length(zeta)}-list of such vectors.}
+\item{dim}{A string indicating the wavelet name if used.}
+\item{wf}{A string indicating the wavelet name if used.}
+\item{diagnostics}{A list of length 3. Item \code{iter} is a \code{length(zeta)}-list
+of vectors containing  the number of   iterations for each \code{lambda} value
+for which the algorithm converged. Item \code{bt_iter}  is a  \code{length(zeta)}
+vector with total number of backtracking steps performed across all (converged)
+\code{lambda} values for given  \code{zeta} value. Key \code{bt_enter} is a
+\code{length(zeta)} vector with  total number of times backtracking is initiated
+across all (converged)  \code{lambda} values for given \code{zeta} value.}
+\item{endmod}{Vector of length \code{length(zeta)} with the number of
+models fitted for each \code{zeta}.}
+\item{Stops}{Convergence indicators.}
 }
 \description{
 Efficient procedure for solving the Lasso or SCAD penalized soft
-maximin problem for large scale data. This software implements two proximal
+maximin problem for large scale_y data. This software implements two proximal
 gradient based algorithms (NPG and FISTA) to solve different forms of the soft
-maximin problem from \cite{Lund et al., 2021}. i) For general group specific
+maximin problem from \cite{Lund et al., 2022}. 1) For general group specific
 design the soft maximin problem is solved using the NPG algorithm.
-ii) For fixed identical d-array-tensor design across groups, where \eqn{d = 1, 2, 3}, the
-estimation procedure uses either the FISTA algorithm or the NPG algorithm,
-and for \eqn{d = 2,3} avoids using the tensor design matrix.
+2) For fixed identical d-array-tensor design across groups, where \eqn{d = 1, 2, 3}, the
+estimation procedure uses either the FISTA algorithm or the NPG algorithm and
+is implemented for the following two cases; i) For a tensor design matrix the
+algorithms use array arithmetic to speed up design matrix multiplications
+using only the tensor components ii) For a wavelet design matrix the algorithms use
+the pyramid algorithm to completely avoid the design matrix and speed up
+design matrix multiplications.
 Multi-threading is possible when openMP is available for R.
 
 Note this package SMME replaces the SMMA package.
@@ -149,20 +159,20 @@ coefficient, \eqn{\mathbf{X}_g} an \eqn{n_g\times p} group design matrix and
 a common coefficient \eqn{\beta} such that \eqn{\mathbf{X}_g\beta} is a robust
 and good approximation to \eqn{\mathbf{X}_gb_g} across groups.
 
-Following \cite{Lund et al., 2021}, this objective may be accomplished by
+Following \cite{Lund et al., 2022}, this objective may be accomplished by
 solving the soft maximin estimation problem
 \deqn{
 \min_{\beta}\frac{1}{\zeta}\log\bigg(\sum_{g = 1}^G \exp(-\zeta \hat V_g(\beta))\bigg)
  + \lambda  \Vert\beta\Vert_1, \quad \zeta > 0,\lambda \geq 0.
 }
 Here \eqn{\zeta} essentially controls the amount of pooling across groups
-(\eqn{\zeta \sim 0} ignores grouping and pools observations) and
+(\eqn{\zeta \sim 0} effectively ignores grouping and pools observations) and
 \deqn{
 \hat V_g(\beta):=\frac{1}{n_g}(2\beta^\top \mathbf{X}_g^\top
 \mathbf{y}_g-\beta^\top \mathbf{X}_g^\top \mathbf{X}_g\beta),
 }
-is the empirical explained variance from \cite{Meinshausen and B{u}hlmann, 2015}.
-See \cite{Lund et al., 2021} for more details and references.
+is the empirical explained variance, see \cite{Lund et al., 2021} for more
+details and references.
 
 The function \code{softmaximin} solves the soft maximin estimation problem in
 large scale settings for a sequence of penalty parameters
@@ -175,18 +185,26 @@ step adaptive lasso procedure to loop over the inner proximal algorithm.
 
 Two optimization algorithms  are implemented in the SMME packages;
 a non-monotone proximal gradient (NPG) algorithm and a fast iterative soft
-thresholding algorithm (FISTA). The implementation is particularly efficient
-for applications where the design is identical across groups i.e. \eqn{\mathbf{X}_g = \mathbf{X}}
-\eqn{\forall g \in \{1, \ldots, G\}} and where \eqn{\mathbf{X}} has tensor
-structure i.e.
-\deqn{
-\mathbf{X} = \bigotimes_{i=1}^d \mathbf{M}_i.
-}
-for marginal \eqn{n_i\times p_i} design matrices \eqn{\mathbf{M}_1,\ldots, \mathbf{M}_d}.
+thresholding algorithm (FISTA).
 
-For \eqn{d \in \{ 1, 2, 3\}}, provided only with the marginal matrices and the
-group response vectors, \code{softmaximin} solves the soft maximin problem with
-minimal memory footprint using tensor optimized arithmetic, see  \code{\link{RH}}.
+The implementation is particularly efficient for models where the design is
+identical across groups i.e. \eqn{\mathbf{X}_g = \mathbf{X}}
+\eqn{\forall g \in \{1, \ldots, G\}} in the following two cases:
+i) first if \eqn{\mathbf{X}} has tensor structure i.e.
+\deqn{
+\mathbf{X} = \bigotimes_{i=1}^d \mathbf{M}_i
+}
+for marginal \eqn{n_i\times p_i} design matrices \eqn{\mathbf{M}_1,\ldots, \mathbf{M}_d}
+, \eqn{d \in \{ 1, 2, 3\}}, \code{y} is a \eqn{d + 1} dimensional response array
+and  \code{x} is a list containing the \eqn{d} marginal matrices
+\eqn{\mathbf{M}_1,\ldots, \mathbf{M}_d}. In this case \code{softmaximin} solves
+the soft maximin problem using minimal memory by way of tensor optimized
+arithmetic, see also \code{\link{RH}}.
+ii) second, if the design matrix \eqn{\mathbf{X}} is the inverse matrix of an
+orthogonal wavelet transform \code{softmaximin}  solves the soft maximin problem
+ provided only with the \eqn{d + 1} dimensional response array \code{y}
+ (i.e. \code{x = NULL}) and uses the  pyramid algorithm to compute multiplications
+ involving \eqn{\mathbf{X}}.
 
 Note that when multiple values for \eqn{\zeta} is provided it is  possible to
 distribute the computations across CPUs if openMP is available.
@@ -203,7 +221,7 @@ x <- y <- list()
 for(g in 1:G){x[[g]] <- matrix(rnorm(n[g] * p), n[g], p)}
 
 ##common features and effects
-common_features <- rbinom(p, 1, 0.1)
+common_features <- rbinom(p, 1, 0.1) #sparsity of comm. feat.
 common_effects <- rnorm(p) * common_features
 
 ##group response
@@ -218,37 +236,67 @@ system.time(fit <- softmaximin(x, y, zeta = c(0.1, 1), penalty = "lasso", alg = 
 betahat <- fit$coef
 
 ##estimated common effects for specific lambda and zeta
-modelno <- 6; zetano <- 2
+modelno <- 9; zetano <- 2
 m <- min(betahat[[zetano]][ , modelno], common_effects)
 M <- max(betahat[[zetano]][ , modelno], common_effects)
 plot(common_effects, type = "p", ylim = c(m, M), col = "red")
 lines(betahat[[zetano]][ , modelno], type = "h")
 
 #Array data
-
 ##size of example
 set.seed(42)
-G <- 5; n <- c(65, 26, 13); p <- c(13, 5, 4)
+G <- 50; n <- c(30, 20, 10); p <- c(7, 5, 4)
 
 ##marginal design matrices (Kronecker components)
 x <- list()
 for(i in 1:length(n)){x[[i]] <- matrix(rnorm(n[i] * p[i]), n[i], p[i])}
 
 ##common features and effects
-common_features <- rbinom(prod(p), 1, 0.1)
-common_effects <- rnorm(prod(p), 0, 0.1) * common_features
+common_features <- rbinom(prod(p), 1, 0.1) #sparsity of comm. feat.
+common_effects <- rnorm(prod(p),0,0.1) * common_features
 
 ##group response
  y <- array(NA, c(n, G))
 for(g in 1:G){
-bg <- rnorm(prod(p), 0, 0.1) * (1 - common_features) + common_effects
+bg <- rnorm(prod(p), 0, .1) * (1 - common_features) + common_effects
 Bg <- array(bg, p)
 mu <- RH(x[[3]], RH(x[[2]], RH(x[[1]], Bg)))
 y[,,, g] <- array(rnorm(prod(n)), dim = n) + mu
 }
 
 ##fit model for range of lambda and zeta
-system.time(fit <- softmaximin(x, y, zeta = c(0.1, 1, 10, 100), penalty = "lasso", alg = "npg"))
+system.time(fit <- softmaximin(x, y, zeta = c(1, 10, 100), penalty = "lasso",
+            alg = "npg"))
+Betahat <- fit$coef
+
+##estimated common effects for specific lambda and zeta
+modelno <- 30; zetano <- 1
+m <- min(Betahat[[zetano]][, modelno], common_effects)
+M <- max(Betahat[[zetano]][, modelno], common_effects)
+plot(common_effects, type = "h", ylim = c(m, M), col = "red")
+lines(Betahat[[zetano]][, modelno], type = "h")
+
+#Array data and wavelets
+##size of example
+set.seed(42)
+G <- 50; p <- n <- c(2^3, 2^4, 2^5);
+
+##common features and effects
+common_features <- rbinom(prod(p), 1, 0.1) #sparsity of comm. feat.
+common_effects <- rnorm(prod(p), 0, 1) * common_features
+
+##group response
+y <- array(NA, c(n, G))
+for(g in 1:G){
+bg <- rnorm(prod(p), 0, 0.1) * (1 - common_features) + common_effects
+Bg <- array(bg, p)
+mu <- iwt(Bg)
+y[,,, g] <- array(rnorm(prod(n), 0, 0.5), dim = n) + mu
+}
+
+##fit model for range of lambda and zeta
+system.time(fit <- softmaximin(x = "la8", y, zeta = c(0.1, 1, 10),
+                                penalty = "lasso", alg = "fista"))
 Betahat <- fit$coef
 
 ##estimated common effects for specific lambda and zeta
@@ -260,12 +308,9 @@ lines(Betahat[[zetano]][, modelno], type = "h")
 
 }
 \references{
-Lund, A., S. W. Mogensen and N. R. Hansen (2021). Soft Maximin Estimation for
-Heterogeneous Data. \emph{Preprint}. url = {https://arxiv.org/abs/1805.02407}
-
-Meinshausen, N and P. B{u}hlmann (2015). Maximin effects in inhomogeneous
-large-scale data. \emph{The Annals of Statistics}. 43, 4, 1801-1830.
-url = {https://doi.org/10.1214/15-AOS1325}.
+Lund, A., S. W. Mogensen and N. R. Hansen (2022). Soft Maximin Estimation for
+Heterogeneous Data. \emph{Scandinvaian Journal of Statistics}.
+url = {https://doi.org/10.1111/sjos.12580}
 }
 \author{
 Adam Lund

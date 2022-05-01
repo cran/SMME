@@ -2,7 +2,7 @@
 % Please edit documentation in R/SMME_RH.R
 \name{RH}
 \alias{RH}
-\alias{glamlasso_RH}
+\alias{SMME_RH}
 \alias{Rotate}
 \alias{H}
 \title{The Rotated H-transform of a 3d Array by a Matrix}
