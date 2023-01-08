@@ -30,7 +30,7 @@
 #'
 #' fit <- softmaximin(X, Y, zeta = 10, penalty = "lasso", alg = "npg")
 #' fit
-#'
+# @return The matrix above is silently returned
 #' @author Adam Lund
 #' @method print SMME
 #' @export

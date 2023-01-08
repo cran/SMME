@@ -26,7 +26,7 @@ softmaximin(x,
             nu = 1,
             Lmin = 0,
             lse = TRUE,
-            nthreads = 4)
+            nthreads = 2)
 }
 \arguments{
 \item{x}{Either a list containing the G group specific design matrices of sizes
@@ -58,20 +58,18 @@ Used when lambda is not specified.}
 smallest value for which all coefficients are zero. Used when lambda is not
 specified.}
 
-\item{lambda}{sequence of strictly positive floats used  as penalty parameters.}
+\item{lambda}{A sequence of strictly positive floats used  as penalty parameters.}
 
-\item{scale_y}{strictly positive number that is the response \code{y} is multiplied with.}
+\item{scale_y}{strictly positive number that the response \code{y} is multiplied with.}
 
-\item{penalty.factor}{array of size \eqn{p_1 \times \cdots \times p_d} of
-positive floats. Is multiplied with each element in \code{lambda} to allow
-differential penalization on the coefficients.}
+\item{penalty.factor}{a length \eqn{p} vector of positive floats that are
+multiplied with each element in \code{lambda} to allow differential penalization
+on the coefficients. For tensor models an array of size \eqn{p_1 \times \cdots \times p_d}.}
 
-\item{reltol}{strictly positive float giving the convergence tolerance for
-the inner loop.}
+\item{reltol}{strictly positive float giving the convergence tolerance.}
 
 \item{maxiter}{positive integer giving the maximum number of  iterations
-allowed for each \code{lambda} value, when  summing over all outer iterations
-for said \code{lambda}.}
+allowed for each \code{lambda} value.}
 
 \item{steps}{strictly positive integer giving the number of steps used in the
 multi-step adaptive lasso algorithm for non-convex penalties. Automatically
@@ -100,7 +98,7 @@ as for the FISTA algorithm.}
 default and yields the loss below and  FALSE yields the exponential of this.}
 
 \item{nthreads}{integer giving the number of threads to use when  openMP
-is available. Default is 4.}
+is available. Default is 2.}
 }
 \value{
 An object with S3 Class "SMME".
@@ -116,7 +114,8 @@ coefficients for each value of \code{lambda} for which the procedure converged.}
 For array data a vector giving the dimension of the model coefficient array \eqn{\beta}.}
 \item{dimobs}{An integer giving the number of observations. For array data a
 vector giving the dimension of the observation (response) array \code{Y}.}
-\item{dim}{A string indicating the wavelet name if used.}
+\item{dim}{Integer indicating the dimension of of the array model. Equal to 1
+for non array.}
 \item{wf}{A string indicating the wavelet name if used.}
 \item{diagnostics}{A list of length 3. Item \code{iter} is a \code{length(zeta)}-list
 of vectors containing  the number of   iterations for each \code{lambda} value
@@ -171,7 +170,7 @@ Here \eqn{\zeta} essentially controls the amount of pooling across groups
 \hat V_g(\beta):=\frac{1}{n_g}(2\beta^\top \mathbf{X}_g^\top
 \mathbf{y}_g-\beta^\top \mathbf{X}_g^\top \mathbf{X}_g\beta),
 }
-is the empirical explained variance, see \cite{Lund et al., 2021} for more
+is the empirical explained variance, see \cite{Lund et al., 2022} for more
 details and references.
 
 The function \code{softmaximin} solves the soft maximin estimation problem in
@@ -202,8 +201,9 @@ the soft maximin problem using minimal memory by way of tensor optimized
 arithmetic, see also \code{\link{RH}}.
 ii) second, if the design matrix \eqn{\mathbf{X}} is the inverse matrix of an
 orthogonal wavelet transform \code{softmaximin}  solves the soft maximin problem
- provided only with the \eqn{d + 1} dimensional response array \code{y}
- (i.e. \code{x = NULL}) and uses the  pyramid algorithm to compute multiplications
+ given the \eqn{d + 1} dimensional response array \code{y} and
+   \code{x} the name of the wavelet family \code{\link{wt}},  using the
+   pyramid algorithm to compute multiplications
  involving \eqn{\mathbf{X}}.
 
 Note that when multiple values for \eqn{\zeta} is provided it is  possible to
@@ -236,7 +236,8 @@ system.time(fit <- softmaximin(x, y, zeta = c(0.1, 1), penalty = "lasso", alg = 
 betahat <- fit$coef
 
 ##estimated common effects for specific lambda and zeta
-modelno <- 9; zetano <- 2
+zetano <- 2
+modelno <- dim(betahat[[zetano]])[2]
 m <- min(betahat[[zetano]][ , modelno], common_effects)
 M <- max(betahat[[zetano]][ , modelno], common_effects)
 plot(common_effects, type = "p", ylim = c(m, M), col = "red")
@@ -267,14 +268,15 @@ y[,,, g] <- array(rnorm(prod(n)), dim = n) + mu
 ##fit model for range of lambda and zeta
 system.time(fit <- softmaximin(x, y, zeta = c(1, 10, 100), penalty = "lasso",
             alg = "npg"))
-Betahat <- fit$coef
+betahat <- fit$coef
 
 ##estimated common effects for specific lambda and zeta
-modelno <- 30; zetano <- 1
-m <- min(Betahat[[zetano]][, modelno], common_effects)
-M <- max(Betahat[[zetano]][, modelno], common_effects)
-plot(common_effects, type = "h", ylim = c(m, M), col = "red")
-lines(Betahat[[zetano]][, modelno], type = "h")
+zetano <- 1
+modelno <- dim(betahat[[zetano]])[2]
+m <- min(betahat[[zetano]][, modelno], common_effects)
+M <- max(betahat[[zetano]][, modelno], common_effects)
+plot(common_effects, type = "p", ylim = c(m, M), col = "red")
+lines(betahat[[zetano]][ , modelno], type = "h")
 
 #Array data and wavelets
 ##size of example
@@ -297,19 +299,20 @@ y[,,, g] <- array(rnorm(prod(n), 0, 0.5), dim = n) + mu
 ##fit model for range of lambda and zeta
 system.time(fit <- softmaximin(x = "la8", y, zeta = c(0.1, 1, 10),
                                 penalty = "lasso", alg = "fista"))
-Betahat <- fit$coef
+betahat <- fit$coef
 
 ##estimated common effects for specific lambda and zeta
-modelno <- 10; zetano <- 3
-m <- min(Betahat[[zetano]][, modelno], common_effects)
-M <- max(Betahat[[zetano]][, modelno], common_effects)
-plot(common_effects, type = "h", ylim = c(m, M), col = "red")
-lines(Betahat[[zetano]][, modelno], type = "h")
-
+zetano <- 3
+modelno <- dim(betahat[[zetano]])[2]
+m <- min(betahat[[zetano]][, modelno], common_effects)
+M <- max(betahat[[zetano]][, modelno], common_effects)
+plot(common_effects, type = "p", ylim = c(m, M), col = "red")
+lines(betahat[[zetano]][ , modelno], type = "h")
 }
 \references{
 Lund, A., S. W. Mogensen and N. R. Hansen (2022). Soft Maximin Estimation for
-Heterogeneous Data. \emph{Scandinvaian Journal of Statistics}.
+Heterogeneous Data. \emph{Scandinavian Journal of Statistics}, vol. 49, no. 4,
+pp. 1761-1790.
 url = {https://doi.org/10.1111/sjos.12580}
 }
 \author{
